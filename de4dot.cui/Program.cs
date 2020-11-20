@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -29,9 +29,7 @@ using System.Reflection;
 namespace de4dot.cui {
 	class ExitException : Exception {
 		public readonly int code;
-		public ExitException(int code) {
-			this.code = code;
-		}
+		public ExitException(int code) => this.code = code;
 	}
 
 	class Program {
@@ -40,7 +38,7 @@ namespace de4dot.cui {
 		static IList<IDeobfuscatorInfo> LoadPlugin(string assembly) {
 			var plugins = new List<IDeobfuscatorInfo>();
 			try {
-				foreach (Type item in Assembly.LoadFile(assembly).GetTypes()) {
+				foreach (var item in Assembly.LoadFile(assembly).GetTypes()) {
 					var interfaces = new List<Type>(item.GetInterfaces());
 					if (item.IsClass && interfaces.Contains(typeof(IDeobfuscatorInfo)))
 						plugins.Add((IDeobfuscatorInfo)Activator.CreateInstance(item));
@@ -102,14 +100,13 @@ namespace de4dot.cui {
 
 			const string showAllMessagesEnvName = "SHOWALLMESSAGES";
 			try {
-				if (Console.OutputEncoding.IsSingleByte)
+				if (Console.OutputEncoding.IsSingleByte || Console.OutputEncoding.CodePage == 437)
 					Console.OutputEncoding = new UTF8Encoding(false);
 
 				Logger.Instance.CanIgnoreMessages = !HasEnv(showAllMessagesEnvName);
 
 				Logger.n("");
-				Logger.n("de4dot v{0} Copyright (C) 2011-2015 de4dot@gmail.com", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-				Logger.n("Latest version and source code: https://github.com/0xd4d/de4dot");
+				Logger.n("de4dot v{0}", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 				Logger.n("");
 
 				var options = new FilesDeobfuscator.Options();
@@ -183,9 +180,7 @@ namespace de4dot.cui {
 			return HasEnv("windir") && !HasEnv("PROMPT");
 		}
 
-		public static void PrintStackTrace(Exception ex) {
-			PrintStackTrace(ex, LoggerEvent.Error);
-		}
+		public static void PrintStackTrace(Exception ex) => PrintStackTrace(ex, LoggerEvent.Error);
 
 		public static void PrintStackTrace(Exception ex, LoggerEvent loggerEvent) {
 			var line = new string('-', 78);

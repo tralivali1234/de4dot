@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -29,14 +29,14 @@ namespace de4dot.code.deobfuscators {
 
 	public interface IOperations {
 		bool KeepObfuscatorTypes { get; }
-		MetaDataFlags MetaDataFlags { get; }
+		MetadataFlags MetadataFlags { get; }
 		RenamerFlags RenamerFlags { get; }
 		OpDecryptString DecryptStrings { get; }
 	}
 
 	public class Operations : IOperations {
 		public bool KeepObfuscatorTypes { get; set; }
-		public MetaDataFlags MetaDataFlags { get; set; }
+		public MetadataFlags MetadataFlags { get; set; }
 		public RenamerFlags RenamerFlags { get; set; }
 		public OpDecryptString DecryptStrings { get; set; }
 	}

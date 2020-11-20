@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using dnlib.DotNet.Emit;
 
 namespace de4dot.blocks {
 	// This class makes sure that each block that is entered with a non-empty stack has at
@@ -42,7 +43,7 @@ namespace de4dot.blocks {
 			}
 
 			public void CalculateStackUsage() {
-				Block block = baseBlock as Block;
+				var block = baseBlock as Block;
 				if (block == null) {
 					stackEnd = stackStart;
 					return;
@@ -67,7 +68,12 @@ namespace de4dot.blocks {
 		}
 
 		void CreateBlockInfos() {
-			int firstBlockStackStart = scopeBlock is TryHandlerBlock ? 1 : 0;
+			int firstBlockStackStart = 0;
+			if ((scopeBlock is HandlerBlock || scopeBlock is FilterHandlerBlock) &&
+				scopeBlock.Parent is TryHandlerBlock tryHandlerBlock &&
+				(tryHandlerBlock.HandlerType == ExceptionHandlerType.Catch || tryHandlerBlock.HandlerType == ExceptionHandlerType.Filter)) {
+				firstBlockStackStart = 1;
+			}
 			foreach (var bb in GetStartBlocks()) {
 				int stackStart = ReferenceEquals(bb, sorted[0]) ? firstBlockStackStart : 0;
 				ScanBaseBlock(bb, stackStart);
@@ -76,7 +82,7 @@ namespace de4dot.blocks {
 			// One reason for this to fail is if there are still dead blocks left. Could also
 			// be a bug in the code.
 			if (blockInfos.Count != sorted.Count)
-				throw new ApplicationException(string.Format("Didn't add all blocks: {0} vs {1}", blockInfos.Count, sorted.Count));
+				throw new ApplicationException($"Didn't add all blocks: {blockInfos.Count} vs {sorted.Count}");
 		}
 
 		IEnumerable<BaseBlock> GetStartBlocks() {
@@ -139,7 +145,7 @@ namespace de4dot.blocks {
 			foreach (var bb in sorted)
 				AddToNewList(bb);
 			if (newList.Count != sorted.Count)
-				throw new ApplicationException(string.Format("Too many/few blocks after sorting: {0} vs {1}", newList.Count, sorted.Count));
+				throw new ApplicationException($"Too many/few blocks after sorting: {newList.Count} vs {sorted.Count}");
 			if (newList.Count > 0 && !ReferenceEquals(newList[0], sorted[0]))
 				throw new ApplicationException("Start block is not first block after sorting");
 		}

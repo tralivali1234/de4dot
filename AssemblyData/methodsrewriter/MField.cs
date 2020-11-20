@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -30,8 +30,6 @@ namespace AssemblyData.methodsrewriter {
 			this.fieldDef = fieldDef;
 		}
 
-		public override string ToString() {
-			return fieldDef.ToString();
-		}
+		public override string ToString() => fieldDef.ToString();
 	}
 }

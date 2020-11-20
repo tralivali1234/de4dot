@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -95,13 +95,11 @@ namespace de4dot.code.deobfuscators.Confuser {
 			return null;
 		}
 
-		public static FieldDef FindStreamField(MethodDef method, TypeDef declaringType) {
-			return FindStreamField(method, declaringType, "System.IO.Stream");
-		}
+		public static FieldDef FindStreamField(MethodDef method, TypeDef declaringType) =>
+			FindStreamField(method, declaringType, "System.IO.Stream");
 
-		public static FieldDef FindMemoryStreamField(MethodDef method, TypeDef declaringType) {
-			return FindStreamField(method, declaringType, "System.IO.MemoryStream");
-		}
+		public static FieldDef FindMemoryStreamField(MethodDef method, TypeDef declaringType) =>
+			FindStreamField(method, declaringType, "System.IO.MemoryStream");
 
 		public static FieldDef FindStreamField(MethodDef method, TypeDef declaringType, string fieldTypeName) {
 			var instrs = method.Body.Instructions;

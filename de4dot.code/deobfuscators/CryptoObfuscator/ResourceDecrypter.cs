@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -225,9 +225,8 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 				constants.Add(flagValue);
 			}
 
-			int notIndex, skipIndex;
-			flipFlagsBits = CheckFlipBits(method, out notIndex);
-			skipBytes = GetHeaderSkipBytes(method, out skipIndex);
+			flipFlagsBits = CheckFlipBits(method, out int notIndex);
+			skipBytes = GetHeaderSkipBytes(method, out int skipIndex);
 			skipBeforeFlag = skipIndex < notIndex;
 
 			switch (frameworkType) {
@@ -314,11 +313,13 @@ namespace de4dot.code.deobfuscators.CryptoObfuscator {
 					yield return method;
 				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Char,System.IO.Stream)"))
 					yield return method;
+				else if (DotNetUtils.IsMethod(method, "System.Byte[]", "(System.Int64,System.Object)"))
+					yield return method;
 			}
 		}
 
 		public byte[] Decrypt(Stream resourceStream) {
-			Stream sourceStream = resourceStream;
+			var sourceStream = resourceStream;
 			int sourceStreamOffset = 1;
 			bool didSomething = false;
 

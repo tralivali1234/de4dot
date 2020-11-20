@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -19,6 +19,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
@@ -29,17 +30,17 @@ namespace de4dot.code.renamer {
 		Module module;
 		Dictionary<string, Resource> nameToResource;
 
-		public ResourceRenamer(Module module) {
-			this.module = module;
-		}
+		public ResourceRenamer(Module module) => this.module = module;
 
 		public void Rename(List<TypeInfo> renamedTypes) {
 			// Rename the longest names first. Otherwise eg. b.g.resources could be renamed
 			// Class0.g.resources instead of Class1.resources when b.g was renamed Class1.
 			renamedTypes.Sort((a, b) => {
-				if (b.oldFullName.Length != a.oldFullName.Length)
-					return b.oldFullName.Length.CompareTo(a.oldFullName.Length);
-				return b.oldFullName.CompareTo(a.oldFullName);
+				var aesc = EscapeTypeName(a.oldFullName);
+				var besc = EscapeTypeName(b.oldFullName);
+				if (besc.Length != aesc.Length)
+					return besc.Length.CompareTo(aesc.Length);
+				return besc.CompareTo(aesc);
 			});
 
 			nameToResource = new Dictionary<string, Resource>(module.ModuleDefMD.Resources.Count * 3, StringComparer.Ordinal);
@@ -60,7 +61,7 @@ namespace de4dot.code.renamer {
 		void RenameResourceNamesInCode(List<TypeInfo> renamedTypes) {
 			var oldNameToTypeInfo = new Dictionary<string, TypeInfo>(StringComparer.Ordinal);
 			foreach (var info in renamedTypes)
-				oldNameToTypeInfo[info.oldFullName] = info;
+				oldNameToTypeInfo[EscapeTypeName(info.oldFullName)] = info;
 
 			foreach (var method in module.GetAllMethods()) {
 				if (!method.HasBody)
@@ -74,14 +75,12 @@ namespace de4dot.code.renamer {
 					if (string.IsNullOrEmpty(codeString))
 						continue;
 
-					Resource resource;
-					if (!nameToResource.TryGetValue(codeString, out resource))
+					if (!nameToResource.TryGetValue(codeString, out var resource))
 						continue;
 
-					TypeInfo typeInfo;
-					if (!oldNameToTypeInfo.TryGetValue(codeString, out typeInfo))
+					if (!oldNameToTypeInfo.TryGetValue(codeString, out var typeInfo))
 						continue;
-					var newName = typeInfo.type.TypeDef.FullName;
+					var newName = EscapeTypeName(typeInfo.type.TypeDef.FullName);
 
 					bool renameCodeString = module.ObfuscatedFile.RenameResourcesInCode ||
 											IsCallingResourceManagerCtor(instrs, i, typeInfo);
@@ -141,27 +140,59 @@ namespace de4dot.code.renamer {
 				this.typeInfo = typeInfo;
 				this.newResourceName = newResourceName;
 			}
-			public override string ToString() {
-				return string.Format("{0} => {1}", resource.Name, newResourceName);
-			}
+			public override string ToString() => $"{resource.Name} => {newResourceName}";
 		}
 
 		void RenameResources(List<TypeInfo> renamedTypes) {
 			var newNames = new Dictionary<Resource, RenameInfo>();
 			foreach (var info in renamedTypes) {
-				var oldFullName = info.oldFullName;
-				Resource resource;
-				if (!nameToResource.TryGetValue(oldFullName, out resource))
+				var oldFullName = EscapeTypeName(info.oldFullName);
+				if (!nameToResource.TryGetValue(oldFullName, out var resource))
 					continue;
 				if (newNames.ContainsKey(resource))
 					continue;
-				var newTypeName = info.type.TypeDef.FullName;
+				var newTypeName = EscapeTypeName(info.type.TypeDef.FullName);
 				var newName = newTypeName + resource.Name.String.Substring(oldFullName.Length);
 				newNames[resource] = new RenameInfo(resource, info, newName);
 
 				Logger.v("Renamed resource in resources: {0} => {1}", Utils.RemoveNewlines(resource.Name), newName);
 				resource.Name = newName;
 			}
+		}
+
+		static bool IsReservedTypeNameChar(char c) {
+			switch (c) {
+			case ',':
+			case '[':
+			case ']':
+			case '&':
+			case '*':
+			case '+':
+			case '\\':
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		static bool HasReservedTypeNameChar(string s) {
+			foreach (var c in s) {
+				if (IsReservedTypeNameChar(c))
+					return true;
+			}
+			return false;
+		}
+
+		static string EscapeTypeName(string name) {
+			if (!HasReservedTypeNameChar(name))
+				return name;
+			var sb = new StringBuilder();
+			foreach (var c in name) {
+				if (IsReservedTypeNameChar(c))
+					sb.Append('\\');
+				sb.Append(c);
+			}
+			return sb.ToString();
 		}
 	}
 }

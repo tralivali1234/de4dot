@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -22,9 +22,7 @@ using dnlib.DotNet;
 
 namespace de4dot.code.renamer.asmmodules {
 	public class MGenericParamDef : Ref {
-		public GenericParam GenericParam {
-			get { return (GenericParam)memberRef; }
-		}
+		public GenericParam GenericParam => (GenericParam)memberRef;
 
 		public MGenericParamDef(GenericParam genericParameter, int index)
 			: base(genericParameter, null, index) {

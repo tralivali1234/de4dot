@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -44,21 +44,10 @@ namespace de4dot.code.deobfuscators.Confuser {
 			v19_r78363_safe,
 		}
 
-		public MethodDef InitMethod {
-			get { return initMethod; }
-		}
-
-		public TypeDef Type {
-			get { return initMethod != null ? initMethod.DeclaringType : null; }
-		}
-
-		public bool Detected {
-			get { return initMethod != null; }
-		}
-
-		public AntiDebugger(ModuleDefMD module) {
-			this.module = module;
-		}
+		public MethodDef InitMethod => initMethod;
+		public TypeDef Type => initMethod?.DeclaringType;
+		public bool Detected => initMethod != null;
+		public AntiDebugger(ModuleDefMD module) => this.module = module;
 
 		public void Find() {
 			if (CheckMethod(DotNetUtils.GetModuleTypeCctor(module)))

@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -19,12 +19,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using dnlib.DotNet.Emit;
 using dnlib.DotNet;
-using de4dot.blocks;
 
 using OpCode = dnlib.DotNet.Emit.OpCode;
 using OpCodes = dnlib.DotNet.Emit.OpCodes;
@@ -48,8 +46,7 @@ namespace AssemblyData.methodsrewriter {
 				if (f.FieldType != typeof(OpCode))
 					continue;
 				var opcode = (OpCode)f.GetValue(null);
-				ROpCode ropcode;
-				if (!refDict.TryGetValue(opcode.Value, out ropcode))
+				if (!refDict.TryGetValue(opcode.Value, out var ropcode))
 					continue;
 				dnlibToReflection[opcode] = ropcode;
 			}
@@ -58,7 +55,7 @@ namespace AssemblyData.methodsrewriter {
 		IMethodsRewriter methodsRewriter;
 		string methodName;
 		IList<Instruction> allInstructions;
-		IList<ExceptionHandler> allExceptionHandlers;
+		IList<dnlib.DotNet.Emit.ExceptionHandler> allExceptionHandlers;
 		ILGenerator ilg;
 		Type methodReturnType;
 		Type[] methodParameters;
@@ -70,11 +67,9 @@ namespace AssemblyData.methodsrewriter {
 		List<LocalBuilder> locals;
 		List<Label> labels;
 		Dictionary<Instruction, int> instrToIndex;
-		Stack<ExceptionHandler> exceptionHandlersStack;
+		Stack<dnlib.DotNet.Emit.ExceptionHandler> exceptionHandlersStack;
 
-		public Type DelegateType {
-			get { return delegateType; }
-		}
+		public Type DelegateType => delegateType;
 
 		public CodeGenerator(IMethodsRewriter methodsRewriter, string methodName) {
 			this.methodsRewriter = methodsRewriter;
@@ -88,7 +83,7 @@ namespace AssemblyData.methodsrewriter {
 			delegateType = Utils.GetDelegateType(methodReturnType, methodParameters);
 		}
 
-		public Delegate Generate(IList<Instruction> allInstructions, IList<ExceptionHandler> allExceptionHandlers) {
+		public Delegate Generate(IList<Instruction> allInstructions, IList<dnlib.DotNet.Emit.ExceptionHandler> allExceptionHandlers) {
 			this.allInstructions = allInstructions;
 			this.allExceptionHandlers = allExceptionHandlers;
 
@@ -100,7 +95,7 @@ namespace AssemblyData.methodsrewriter {
 			InitLocals();
 			InitLabels();
 
-			exceptionHandlersStack = new Stack<ExceptionHandler>();
+			exceptionHandlersStack = new Stack<dnlib.DotNet.Emit.ExceptionHandler>();
 			for (int i = 0; i < allInstructions.Count; i++) {
 				UpdateExceptionHandlers(i);
 				var instr = allInstructions[i];
@@ -115,9 +110,7 @@ namespace AssemblyData.methodsrewriter {
 			return dm.CreateDelegate(delegateType);
 		}
 
-		Instruction GetExceptionInstruction(int instructionIndex) {
-			return instructionIndex < 0 ? null : allInstructions[instructionIndex];
-		}
+		Instruction GetExceptionInstruction(int instructionIndex) => instructionIndex < 0 ? null : allInstructions[instructionIndex];
 
 		void UpdateExceptionHandlers(int instructionIndex) {
 			var instr = GetExceptionInstruction(instructionIndex);
@@ -150,7 +143,7 @@ namespace AssemblyData.methodsrewriter {
 		}
 
 		bool AddTryStart(Instruction instr) {
-			var list = new List<ExceptionHandler>();
+			var list = new List<dnlib.DotNet.Emit.ExceptionHandler>();
 			foreach (var ex in allExceptionHandlers) {
 				if (ex.TryStart == instr)
 					list.Add(ex);
@@ -166,9 +159,7 @@ namespace AssemblyData.methodsrewriter {
 			return list.Count > 0;
 		}
 
-		static bool IsSameTryBlock(ExceptionHandler ex1, ExceptionHandler ex2) {
-			return ex1.TryStart == ex2.TryStart && ex1.TryEnd == ex2.TryEnd;
-		}
+		static bool IsSameTryBlock(dnlib.DotNet.Emit.ExceptionHandler ex1, dnlib.DotNet.Emit.ExceptionHandler ex2) => ex1.TryStart == ex2.TryStart && ex1.TryEnd == ex2.TryEnd;
 
 		void InitInstrToIndex() {
 			instrToIndex = new Dictionary<Instruction, int>(allInstructions.Count);
@@ -224,7 +215,7 @@ namespace AssemblyData.methodsrewriter {
 				var methodName = (string)operand.data;
 				var ourMethod = methodsRewriter.GetType().GetMethod(methodName, flags);
 				if (ourMethod == null)
-					throw new ApplicationException(string.Format("Could not find method {0}", methodName));
+					throw new ApplicationException($"Could not find method {methodName}");
 				ilg.Emit(ConvertOpCode(instr.OpCode), ourMethod);
 				break;
 
@@ -241,13 +232,11 @@ namespace AssemblyData.methodsrewriter {
 				break;
 
 			default:
-				throw new ApplicationException(string.Format("Unknown operand type: {0}", operand.type));
+				throw new ApplicationException($"Unknown operand type: {operand.type}");
 			}
 		}
 
-		Label GetLabel(Instruction target) {
-			return labels[instrToIndex[target]];
-		}
+		Label GetLabel(Instruction target) => labels[instrToIndex[target]];
 
 		Label[] GetLabels(Instruction[] targets) {
 			var labels = new Label[targets.Length];
@@ -313,7 +302,7 @@ namespace AssemblyData.methodsrewriter {
 				else if (obj is Type)
 					ilg.Emit(opcode, (Type)obj);
 				else
-					throw new ApplicationException(string.Format("Unknown type: {0}", (obj == null ? obj : obj.GetType())));
+					throw new ApplicationException($"Unknown type: {(obj == null ? obj : obj.GetType())}");
 				break;
 
 			case OperandType.InlineVar:
@@ -326,13 +315,12 @@ namespace AssemblyData.methodsrewriter {
 
 			case OperandType.InlineSig:	//TODO:
 			default:
-				throw new ApplicationException(string.Format("Unknown OperandType {0}", instr.OpCode.OperandType));
+				throw new ApplicationException($"Unknown OperandType {instr.OpCode.OperandType}");
 			}
 		}
 
 		ROpCode ConvertOpCode(OpCode opcode) {
-			ROpCode ropcode;
-			if (dnlibToReflection.TryGetValue(opcode, out ropcode))
+			if (dnlibToReflection.TryGetValue(opcode, out var ropcode))
 				return ropcode;
 			return ROpCodes.Nop;
 		}

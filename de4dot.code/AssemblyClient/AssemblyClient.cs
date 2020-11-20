@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -23,6 +23,13 @@ using System.Runtime.Serialization;
 using System.Threading;
 using AssemblyData;
 
+#if !NETFRAMEWORK
+namespace System.Runtime.Remoting {
+	class RemotingException : SystemException {
+	}
+}
+#endif
+
 namespace de4dot.code.AssemblyClient {
 	public sealed class AssemblyClient : IAssemblyClient {
 		const int WAIT_TIME_BEFORE_CONNECTING = 1000;
@@ -31,25 +38,11 @@ namespace de4dot.code.AssemblyClient {
 		IAssemblyService service;
 		DateTime serverLoadedTime;
 
-		public IAssemblyService Service {
-			get { return service; }
-		}
-
-		public IStringDecrypterService StringDecrypterService {
-			get { return (IStringDecrypterService)service; }
-		}
-
-		public IMethodDecrypterService MethodDecrypterService {
-			get { return (IMethodDecrypterService)service; }
-		}
-
-		public IGenericService GenericService {
-			get { return (IGenericService)service; }
-		}
-
-		public AssemblyClient(IAssemblyServerLoader loader) {
-			this.loader = loader;
-		}
+		public IAssemblyService Service => service;
+		public IStringDecrypterService StringDecrypterService => (IStringDecrypterService)service;
+		public IMethodDecrypterService MethodDecrypterService => (IMethodDecrypterService)service;
+		public IGenericService GenericService => (IGenericService)service;
+		public AssemblyClient(IAssemblyServerLoader loader) => this.loader = loader;
 
 		public void Connect() {
 			loader.LoadServer();

@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (C) 2011-2015 de4dot@gmail.com
 
     This file is part of de4dot.
@@ -38,9 +38,7 @@ namespace de4dot.code.deobfuscators.Confuser {
 			this.doubleValueInliner = doubleValueInliner;
 		}
 
-		public void DeobfuscateBegin(Blocks blocks) {
-			this.blocks = blocks;
-		}
+		public void DeobfuscateBegin(Blocks blocks) => this.blocks = blocks;
 
 		public bool Deobfuscate(List<Block> allBlocks) {
 			bool modified = false;
